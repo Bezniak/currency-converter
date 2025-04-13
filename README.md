@@ -6,7 +6,7 @@
 
 1. Клонируй репозиторий:
 
-git clone https://github.com/your-username/currency-converter.git
+git clone https://github.com/Bezniak/currency-converter.git
 cd currency-converter
 
 2. Установи зависимости:
