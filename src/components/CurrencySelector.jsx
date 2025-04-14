@@ -1,27 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Select from 'react-select';
 import Flag from './Flag';
 
 const CurrencySelect = ({ currencies, selected, onChange, amount, onAmountChange, label }) => {
-    const [options, setOptions] = useState([]);
     const [frequentCurrencies, setFrequentCurrencies] = useState([]);
-    const [otherCurrencies, setOtherCurrencies] = useState([]);
     const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
-        const storedFrequent = JSON.parse(localStorage.getItem('frequentCurrencies')) || [];
-        setFrequentCurrencies(storedFrequent);
-
-        const formattedOptions = currencies.map(({ code, name }) => ({
-            value: code,
-            label: `${code} — ${name}`,
-            code,
-            name,
-        }));
-
-        setOptions(formattedOptions);
-        setOtherCurrencies(formattedOptions.filter(option => !storedFrequent.some(item => item.value === option.value)));
-    }, [currencies]);
+        const stored = JSON.parse(localStorage.getItem('frequentCurrencies')) || [];
+        setFrequentCurrencies(stored);
+    }, []);
 
     useEffect(() => {
         if (frequentCurrencies.length) {
@@ -29,14 +17,25 @@ const CurrencySelect = ({ currencies, selected, onChange, amount, onAmountChange
         }
     }, [frequentCurrencies]);
 
-    const handleCurrencyChange = (selectedOption) => {
+    const options = useMemo(() => currencies.map(({ code, name }) => ({
+        value: code,
+        label: `${code} — ${name}`,
+        code,
+        name,
+    })), [currencies]);
+
+    const otherCurrencies = useMemo(() => {
+        return options.filter(option => !frequentCurrencies.some(item => item.value === option.value));
+    }, [options, frequentCurrencies]);
+
+    const handleCurrencyChange = useCallback((selectedOption) => {
         if (!frequentCurrencies.some(item => item.value === selectedOption.value)) {
-            setFrequentCurrencies([selectedOption, ...frequentCurrencies]);
+            setFrequentCurrencies(prev => [selectedOption, ...prev]);
         }
         onChange(selectedOption.value);
-    };
+    }, [frequentCurrencies, onChange]);
 
-    const handleAmountChange = (e) => {
+    const handleAmountChange = useCallback((e) => {
         let value = e.target.value.trim();
         if (value === '0' || value === '0.') {
             onAmountChange('0');
@@ -44,10 +43,10 @@ const CurrencySelect = ({ currencies, selected, onChange, amount, onAmountChange
             value = value.replace(',', '.');
             onAmountChange(value);
         }
-    };
+    }, [onAmountChange]);
 
     const shouldRenderSelect = frequentCurrencies.length > 0 || otherCurrencies.length > 0;
-    const shouldRenderLabel = label && (frequentCurrencies.length > 0 || otherCurrencies.length > 0);
+    const shouldRenderLabel = label && shouldRenderSelect;
 
     return (
         <div className='w-full md:w-1/2'>
@@ -80,15 +79,15 @@ const CurrencySelect = ({ currencies, selected, onChange, amount, onAmountChange
                             placeholder="Выберите валюту"
                             filterOption={(option, inputValue) => {
                                 const { label, code, name } = option.data || {};
-                                const lowerCaseInput = inputValue.toLowerCase();
-                                return (label && label.toLowerCase().includes(lowerCaseInput)) ||
-                                    (code && code.toLowerCase().includes(lowerCaseInput)) ||
-                                    (name && name.toLowerCase().includes(lowerCaseInput));
+                                const lower = inputValue.toLowerCase();
+                                return (label && label.toLowerCase().includes(lower)) ||
+                                    (code && code.toLowerCase().includes(lower)) ||
+                                    (name && name.toLowerCase().includes(lower));
                             }}
                             classNamePrefix="currency-select"
                             noOptionsMessage={() => 'Нет вариантов'}
                         />
-                        {/* Frequently used currencies */}
+
                         {frequentCurrencies.length > 0 && !isFocused && (
                             <div className="mt-3">
                                 <div className="flex flex-wrap gap-2">
@@ -106,6 +105,7 @@ const CurrencySelect = ({ currencies, selected, onChange, amount, onAmountChange
                         )}
                     </div>
                 )}
+
                 <input
                     type="number"
                     value={amount === '' ? '' : amount}

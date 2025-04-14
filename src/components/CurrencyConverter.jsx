@@ -1,12 +1,12 @@
-import React, {useEffect, useState} from 'react';
-import {fetchRates} from '../api/api.js';
+import React, { useEffect, useState, useCallback } from 'react';
+import { fetchRates } from '../api/api.js';
 import CurrencySelect from './CurrencySelector.jsx';
-import DatePicker, {registerLocale} from 'react-datepicker';
+import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import {format} from 'date-fns';
+import { format } from 'date-fns';
 import ru from 'date-fns/locale/ru';
-import {FaCalendarAlt} from "react-icons/fa";
-import {FaArrowRightArrowLeft} from "react-icons/fa6";
+import { FaCalendarAlt } from "react-icons/fa";
+import { FaArrowRightArrowLeft } from "react-icons/fa6";
 
 registerLocale('ru', ru);
 
@@ -24,7 +24,7 @@ const CurrencyConverter = () => {
         fetch('https://api.frankfurter.app/currencies')
             .then(res => res.json())
             .then(data => {
-                const arr = Object.entries(data).map(([code, name]) => ({code, name}));
+                const arr = Object.entries(data).map(([code, name]) => ({ code, name }));
                 setCurrencies(arr);
             })
             .catch(() => {
@@ -54,10 +54,10 @@ const CurrencyConverter = () => {
             });
     }, [amount, from, to, date, activeInput]);
 
-    const swapCurrencies = () => {
+    const swapCurrencies = useCallback(() => {
         setFrom(to);
         setTo(from);
-    };
+    }, [from, to]);
 
     return (
         <div className="container mx-auto w-full md:max-w-5xl">
@@ -78,7 +78,7 @@ const CurrencyConverter = () => {
                     onClick={swapCurrencies}
                     className="w-fit px-8 py-2 border-white rounded-full text-2xl border-2 text-white hover:bg-orange-500 cursor-pointer hover:border-orange-500 hover:text-white transition-all duration-300"
                 >
-                    <FaArrowRightArrowLeft/>
+                    <FaArrowRightArrowLeft />
                 </button>
 
                 <CurrencySelect
@@ -104,25 +104,13 @@ const CurrencyConverter = () => {
                         className="bg-transparent text-white border-2 border-white w-fit rounded-lg px-6 py-3 pr-12 focus:outline-none"
                         calendarClassName="!bg-gray-900 !text-white"
                         popperPlacement="bottom-start"
-                        popperModifiers={[
-                            {
-                                name: "offset",
-                                options: {
-                                    offset: [0, 8],
-                                },
-                            },
-                        ]}
                         portalId="root-portal"
                         withPortal={true}
                         shouldCloseOnScroll={false}
                         dayClassName={(d) => {
                             const isSelected = format(d, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
                             const isFuture = d > new Date();
-
-                            if (isFuture) {
-                                return '!text-gray-600 !cursor-not-allowed';
-                            }
-
+                            if (isFuture) return '!text-gray-600 !cursor-not-allowed';
                             return [
                                 '!text-white',
                                 isSelected
@@ -132,7 +120,7 @@ const CurrencyConverter = () => {
                         }}
                     />
                     <div className="absolute top-1/2 right-4 transform -translate-y-1/2 text-white">
-                        <FaCalendarAlt size={20}/>
+                        <FaCalendarAlt size={20} />
                     </div>
                 </div>
             </div>
